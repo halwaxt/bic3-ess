@@ -119,12 +119,21 @@ void initializeMPU9150Task(void) {
 
    	/* set accel sensitivity to 2g */
    	writeBuffer[0] = MPU9150_REG_ACCEL_CONFIG;
-   	writeBuffer[1] = MPU9150_ACCEL_CONFIG_AFS_SEL_4G;
+   	writeBuffer[1] = MPU9150_ACCEL_CONFIG_AFS_SEL_2G;
    	i2cTransaction.writeCount = 2;
    	i2cTransaction.readCount = 0;
    	if (!I2C_transfer(i2c, &i2cTransaction)) {
-   		System_abort("setting sensor range failed");
+   		System_abort("setting accel sensor range failed");
    	}
+
+   	/* set gyro range to 250 */
+   	   	writeBuffer[0] = MPU9150_REG_GYRO_CONFIG;
+   	   	writeBuffer[1] = MPU9150_GYRO_FS_SEL_250;
+   	   	i2cTransaction.writeCount = 2;
+   	   	i2cTransaction.readCount = 0;
+   	   	if (!I2C_transfer(i2c, &i2cTransaction)) {
+   	   		System_abort("setting gyro sensor range failed");
+   	   	}
 }
 
 
@@ -135,18 +144,18 @@ void readMPU9150Task()
 	UInt eventPendingResult;
     I2C_Transaction i2cTransaction;
     uint8_t         writeBuffer[1];
-    uint8_t			readBuffer[MPU9150_ACCEL_ONLY];
+    uint8_t			readBuffer[MPU9150_SUPPORTED_SENSOR_BYTES];
 
 	i2cTransaction.slaveAddress = SENSOR_ADDRESS;
 	i2cTransaction.writeBuf = writeBuffer;
 	i2cTransaction.writeCount = 1;
 	i2cTransaction.readBuf = readBuffer;
-	i2cTransaction.readCount = MPU9150_ACCEL_ONLY;
+	i2cTransaction.readCount = MPU9150_SUPPORTED_SENSOR_BYTES;
 
 	writeBuffer[0] = MPU9150_ACCEL_XOUT_H;
 
 	int16_t x,y,z;
-	int32_t val;
+	float gVector;
 	//const float rangeScale = 9.81/MPU9150_ACCEL_CONFIG_2G_RANGE;
 
 	while (1) {
@@ -157,12 +166,8 @@ void readMPU9150Task()
 				y = ((readBuffer[2] << 8) | readBuffer[3]);
 				z = ((readBuffer[4] << 8) | readBuffer[5]);
 
-				if (x < 0) x = x * -1;
-				if (y < 0) y = y * -1;
-				if (z < 0) z = z * -1;
-				val = x + y + z - MPU9150_ACCEL_CONFIG_4G_RANGE;
-
-				System_printf("x: %d - y:%d - z:%d - sum:%d\n", x,y,z, val);
+				gVector = sqrt(x*x + y*y + z*z) - MPU9150_ACCEL_CONFIG_2G_RANGE;
+				System_printf("x: %d # y:%d # z:%d # gVector:%f\n", x,y,z, gVector);
 			    System_flush();
 				/* do something clever with the values */
 			}
