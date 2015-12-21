@@ -57,7 +57,6 @@ int setupClockTask()
     clockParameters.period = 250;
     clockParameters.startFlag = TRUE;
     Clock_create((Clock_FuncPtr)onClockElapsed, 250, &clockParameters, NULL);
-
     return (0);
 }
 
