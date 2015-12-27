@@ -9,6 +9,7 @@
 #define MPU_H_
 
 #include <ti/sysbios/knl/Event.h>
+#include <mpu9150data.h>
 
 #define SENSOR_ADDRESS 0b1101001
 #define MPU9150_PWR_MGMT_1 0x6B
@@ -22,7 +23,7 @@
  * to use one of the gyroscopes
  */
 
-#define MPU9150_SUPPORTED_SENSOR_BYTES 14
+
 
 // PLL with X-axis gyro reference
 #define MPU9150_PWR_MGMT_1_CLKSEL_XG 0b00000001
