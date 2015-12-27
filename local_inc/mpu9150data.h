@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #define MPU9150_SUPPORTED_SENSOR_BYTES 14
+#define MPU_GVECTOR_BASE 16384
 
 typedef struct mpu9150data {
 	uint8_t rawValues[MPU9150_SUPPORTED_SENSOR_BYTES];

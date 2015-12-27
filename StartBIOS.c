@@ -38,9 +38,12 @@
 #include <ctype.h>
 #include <string.h>
 #include <mpu.h>
+#include <mpu9150data.h>
+#include <LedSaberTask.h>
 
 volatile I2C_Handle i2c;
 volatile Event_Handle clockElapsedEventHandle;
+volatile Mailbox_Handle mailboxHandle;
 
 /* is there a "better" way to share the Event_Handle? */
 void onClockElapsed(void) {
@@ -54,7 +57,7 @@ int setupClockTask()
 {
 	Clock_Params clockParameters;
     Clock_Params_init(&clockParameters);
-    clockParameters.period = 250;
+    clockParameters.period = 50;
     clockParameters.startFlag = TRUE;
     Clock_create((Clock_FuncPtr)onClockElapsed, 250, &clockParameters, NULL);
     return (0);
@@ -62,20 +65,32 @@ int setupClockTask()
 
 int main(void) {
 
+	Error_Block errorBlock;
+	Error_init(&errorBlock);
+
     uint32_t ui32SysClock;
 
 	/* Call board init functions. */
 	ui32SysClock = Board_initGeneral(120*1000*1000);
 
-	clockElapsedEventHandle = Event_create(NULL, NULL);
+	clockElapsedEventHandle = Event_create(NULL, &errorBlock);
 	if (clockElapsedEventHandle == NULL) {
 		System_abort("creating event handle failed!\n");
+	}
+
+	Mailbox_Params mailboxParams;
+	Mailbox_Params_init(&mailboxParams);
+
+	mailboxHandle = Mailbox_create(sizeof(Tmpu9150data), 1, &mailboxParams, &errorBlock);
+	if (mailboxHandle == NULL) {
+		System_abort("creating mailbox failed!\n");
 	}
 
 	initializeBus();
 	setupSensor();
 	setupPeriodicRead();
 	setupClockTask();
+	setupLedSaber();
 
     System_printf("Start BIOS\n");
     System_flush();

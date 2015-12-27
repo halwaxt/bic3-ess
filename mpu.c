@@ -21,6 +21,7 @@
 #include <xdc/runtime/Error.h>
 #include <xdc/runtime/System.h>
 #include <ti/sysbios/BIOS.h>
+#include <mpu9150data.h>
 
 
 
@@ -128,13 +129,13 @@ void initializeMPU9150Task(void) {
    	}
 
    	/* set gyro range to 250 */
-   	   	writeBuffer[0] = MPU9150_REG_GYRO_CONFIG;
-   	   	writeBuffer[1] = MPU9150_GYRO_FS_SEL_250;
-   	   	i2cTransaction.writeCount = 2;
-   	   	i2cTransaction.readCount = 0;
-   	   	if (!I2C_transfer(i2c, &i2cTransaction)) {
-   	   		System_abort("setting gyro sensor range failed");
-   	   	}
+	writeBuffer[0] = MPU9150_REG_GYRO_CONFIG;
+	writeBuffer[1] = MPU9150_GYRO_FS_SEL_250;
+	i2cTransaction.writeCount = 2;
+	i2cTransaction.readCount = 0;
+	if (!I2C_transfer(i2c, &i2cTransaction)) {
+		System_abort("setting gyro sensor range failed");
+	}
 }
 
 
@@ -161,10 +162,10 @@ void readMPU9150Task()
 		eventPendingResult = Event_pend(clockElapsedEventHandle, Event_Id_00, Event_Id_00, BIOS_WAIT_FOREVER);
 		if (eventPendingResult != 0) {
 			if (I2C_transfer(i2c, &i2cTransaction)) {
-				getAcceleration(&sensorData, &acceleration);
-				System_printf("x: %d # y:%d # z:%d\n", acceleration.x, acceleration.y, acceleration.z);
-				System_flush();
-				/* post raw values to mailbox */
+				if (! Mailbox_post(mailboxHandle, &sensorData, BIOS_NO_WAIT)) {
+					System_printf("target mailbox is full\n");
+					System_flush();
+				}
 			}
 		}
 	}

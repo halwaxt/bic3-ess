@@ -9,7 +9,7 @@
 #define MPU_H_
 
 #include <ti/sysbios/knl/Event.h>
-#include <mpu9150data.h>
+#include <ti/sysbios/knl/Mailbox.h>
 
 #define SENSOR_ADDRESS 0b1101001
 #define MPU9150_PWR_MGMT_1 0x6B
@@ -55,6 +55,7 @@
 
 extern volatile I2C_Handle i2c;
 extern volatile Event_Handle clockElapsedEventHandle;
+extern volatile Mailbox_Handle mailboxHandle;
 
 
 void initializeBus(void);
