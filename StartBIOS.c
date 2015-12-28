@@ -41,6 +41,8 @@
 #include <mpu9150data.h>
 #include <LedSaberTask.h>
 
+#define POLL_INTERVAL 50
+
 volatile I2C_Handle i2c;
 volatile Event_Handle clockElapsedEventHandle;
 volatile Mailbox_Handle mailboxHandle;
@@ -57,9 +59,9 @@ int setupClockTask()
 {
 	Clock_Params clockParameters;
     Clock_Params_init(&clockParameters);
-    clockParameters.period = 50;
+    clockParameters.period = POLL_INTERVAL;
     clockParameters.startFlag = TRUE;
-    Clock_create((Clock_FuncPtr)onClockElapsed, 250, &clockParameters, NULL);
+    Clock_create((Clock_FuncPtr)onClockElapsed, POLL_INTERVAL, &clockParameters, NULL);
     return (0);
 }
 
@@ -81,7 +83,7 @@ int main(void) {
 	Mailbox_Params mailboxParams;
 	Mailbox_Params_init(&mailboxParams);
 
-	mailboxHandle = Mailbox_create(sizeof(Tmpu9150data), 1, &mailboxParams, &errorBlock);
+	mailboxHandle = Mailbox_create(sizeof(Tacceleration), 1, &mailboxParams, &errorBlock);
 	if (mailboxHandle == NULL) {
 		System_abort("creating mailbox failed!\n");
 	}

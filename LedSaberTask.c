@@ -88,33 +88,27 @@ void setLEDGroupStatus(uint8_t status) {
 void DisplayLedSaberTask()
 {
 	const uint8_t ledPatterns[] = {0b00000000, 0b00001000, 0b00001100, 0b00001110, 0b00001111};
-	Tmpu9150data sensorData;
 	Tacceleration acceleration;
-	float gVectorBias = 0;
 	float gVector;
 	float gValue;
 
 
 	while (1) {
-		if (Mailbox_pend(mailboxHandle, &sensorData, BIOS_WAIT_FOREVER)) {
-			getAcceleration(&sensorData, &acceleration);
+		if (Mailbox_pend(mailboxHandle, &acceleration, BIOS_WAIT_FOREVER)) {
 
-			gVector = fabsf(sqrtf(acceleration.x * acceleration.x + acceleration.y * acceleration.y + acceleration.z * acceleration.z) - MPU_GVECTOR_BASE);
+			gVector = fabsf(sqrtf(acceleration.x * acceleration.x + acceleration.y * acceleration.y + acceleration.z * acceleration.z));
+			gValue = fabsf(gVector/9.81 - 1);
+			/*
+			System_printf("x: %f # y:%f # z:%f # gVector:%f + gValue:%f\n", acceleration.x,acceleration.y,acceleration.z, gVector, gValue);
+			System_flush();
+*/
 
-			if (gVectorBias == 0) {
-				gVectorBias = gVector;
-				System_printf("initialized gVectorBias to %f\n", gVectorBias);
-				System_flush();
-			}
-			if (gVector == 0) gVector = 1;
-			gValue = gVectorBias / gVector;
-			//System_printf("gValue: %f\n", gValue);
-			//System_flush();
-			if (gValue < 0.1) setLEDGroupStatus(ledPatterns[4]);
-			else if (gValue < 0.3) setLEDGroupStatus(ledPatterns[3]);
-			else if (gValue < 0.5) setLEDGroupStatus(ledPatterns[2]);
-			else if (gValue < 0.7) setLEDGroupStatus(ledPatterns[1]);
-			else setLEDGroupStatus(ledPatterns[0]);
+			if (gValue < 0.1) setLEDGroupStatus(ledPatterns[0]);
+			else if (gValue < 0.2) setLEDGroupStatus(ledPatterns[1]);
+			else if (gValue < 0.3) setLEDGroupStatus(ledPatterns[2]);
+			else if (gValue < 0.4) setLEDGroupStatus(ledPatterns[3]);
+			else setLEDGroupStatus(ledPatterns[4]);
+
 
 		}
 	}
