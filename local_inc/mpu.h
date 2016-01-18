@@ -58,9 +58,9 @@
 #define MPU9150_CONFIG_DLPF_21HZ 0b00000100
 
 extern volatile I2C_Handle i2c;
-extern volatile Event_Handle clockElapsedEventHandle;
-extern volatile Mailbox_Handle mailboxHandle;
-
+extern volatile Event_Handle readSensorElapsedEventHandle;
+extern volatile Mailbox_Handle rawDataMailbox;
+extern volatile Mailbox_Handle accelerationDataMailbox;
 
 void initializeBus(void);
 void setupSensor(void);

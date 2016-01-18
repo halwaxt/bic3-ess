@@ -14,7 +14,7 @@
 #include <ti/sysbios/knl/Mailbox.h>
 
 
-extern volatile Mailbox_Handle mailboxHandle;
+extern volatile Mailbox_Handle accelerationDataMailbox;
 
 void setupLedSaber(void);
 
