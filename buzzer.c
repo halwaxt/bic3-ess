@@ -31,13 +31,13 @@
 
 
 #define GFACTOR 100
-#define GDELAY 100
+#define PERIOD_LENGTH 100
 #define GMULTIPLY 2
 
 //volatile Mailbox_Handle mailboxHandle;
 
-Timer_Handle startSoundTimerHandle;
-Timer_Handle stopSoundTimerHandle;
+volatile Timer_Handle startSoundTimerHandle;
+volatile Timer_Handle stopSoundTimerHandle;
 
 void initBuzzer() {
 	//GPIO_init();
@@ -48,10 +48,14 @@ void initBuzzer() {
 }
 
 
-void startTimer(void) {
+void soundTimer(void) {
+	UInt key;
+
 	GPIOPinWrite(GPIO_PORTM_BASE, GPIO_PIN_3, ~(GPIOPinRead(GPIO_PORTM_BASE, GPIO_PIN_3)));
 	Timer_setPeriod(stopSoundTimerHandle,(Timer_getPeriod(startSoundTimerHandle)));
+	key = Hwi_disable();
 	Timer_start(stopSoundTimerHandle);
+	Hwi_restore(key);
 
 }
 void stopTimer(void) {
@@ -59,6 +63,7 @@ void stopTimer(void) {
 }
 
 void startSoundTimer() {
+	UInt key;
  	Timer_Params startTimerParameter;
  	Timer_Params stopTimerParameter;
 
@@ -70,8 +75,10 @@ void startSoundTimer() {
 	startTimerParameter.periodType=Timer_PeriodType_MICROSECS;
 	startTimerParameter.runMode=Timer_RunMode_CONTINUOUS;
 	startTimerParameter.startMode=Timer_StartMode_AUTO;
-	startSoundTimerHandle = Timer_create(2, (ti_sysbios_interfaces_ITimer_FuncPtr) startTimer, &startTimerParameter, &eb);
+	startSoundTimerHandle = Timer_create(2, (ti_sysbios_interfaces_ITimer_FuncPtr) soundTimer, &startTimerParameter, &eb);
+	key = Hwi_disable();
 	Timer_start(startSoundTimerHandle);
+	Hwi_restore(key);
 
 	Timer_Params_init(&stopTimerParameter);
 	stopTimerParameter.period = 0;
@@ -111,7 +118,7 @@ void makeSound() {
 			if (gValue == 0) {
 				gValue = 0.1;
 			}
-			pwmEmulate((gValue*GFACTOR),GDELAY );
+			pwmEmulate((gValue*GFACTOR),PERIOD_LENGTH );
 			//pwmEmulate(0,GDELAY);
 		}
 	}
@@ -134,4 +141,5 @@ void makeSoundTask() {
  		System_abort("musicTask failed\n");
 	}
 }
+
 
