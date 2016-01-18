@@ -23,8 +23,10 @@
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/hal/Timer.h>
 #include <ti/sysbios/knl/Clock.h>
-#include <ti/sysbios/knl/Event.h>
+
 #include <ti/drivers/I2C.h>
+#include <ti/drivers/PWM.h>
+
 
 /* TI-RTOS Header files */
 #include <ti/drivers/UART.h>
@@ -40,28 +42,32 @@
 #include <mpu.h>
 #include <mpu9150data.h>
 #include <LedSaberTask.h>
+#include <UARTTask.h>
 
-#define POLL_INTERVAL 50
+#define READ_SENSOR_INTERVAL 50
 
 volatile I2C_Handle i2c;
-volatile Event_Handle clockElapsedEventHandle;
-volatile Mailbox_Handle mailboxHandle;
+volatile Event_Handle readSensorElapsedEventHandle;
+
+volatile Mailbox_Handle rawDataMailbox;
+volatile Mailbox_Handle accelerationDataMailbox;
+volatile UART_Handle uartHandle;
 
 /* is there a "better" way to share the Event_Handle? */
-void onClockElapsed(void) {
-	Event_post(clockElapsedEventHandle, Event_Id_00);
+void onReadSensorClockElapsed(void) {
+	Event_post(readSensorElapsedEventHandle, Event_Id_00);
 }
 
 /*
  *  setup clock task function
  */
-int setupClockTask()
+int setupReadSensorClockTask()
 {
 	Clock_Params clockParameters;
     Clock_Params_init(&clockParameters);
-    clockParameters.period = POLL_INTERVAL;
+    clockParameters.period = READ_SENSOR_INTERVAL;
     clockParameters.startFlag = TRUE;
-    Clock_create((Clock_FuncPtr)onClockElapsed, POLL_INTERVAL, &clockParameters, NULL);
+    Clock_create((Clock_FuncPtr)onReadSensorClockElapsed, READ_SENSOR_INTERVAL, &clockParameters, NULL);
     return (0);
 }
 
@@ -75,24 +81,32 @@ int main(void) {
 	/* Call board init functions. */
 	ui32SysClock = Board_initGeneral(120*1000*1000);
 
-	clockElapsedEventHandle = Event_create(NULL, &errorBlock);
-	if (clockElapsedEventHandle == NULL) {
-		System_abort("creating event handle failed!\n");
+	readSensorElapsedEventHandle = Event_create(NULL, &errorBlock);
+	if (readSensorElapsedEventHandle == NULL) {
+		System_abort("creating read sensor clock handle failed!\n");
 	}
 
 	Mailbox_Params mailboxParams;
 	Mailbox_Params_init(&mailboxParams);
 
-	mailboxHandle = Mailbox_create(sizeof(Tacceleration), 1, &mailboxParams, &errorBlock);
-	if (mailboxHandle == NULL) {
-		System_abort("creating mailbox failed!\n");
+	rawDataMailbox = Mailbox_create(sizeof(Tmpu9150data), 1, &mailboxParams, &errorBlock);
+	if (rawDataMailbox == NULL) {
+		System_abort("creating mailbox for raw failed!\n");
 	}
 
+	accelerationDataMailbox = Mailbox_create(sizeof(Tacceleration), 1, &mailboxParams, &errorBlock);
+	if (accelerationDataMailbox == NULL) {
+		System_abort("creating mailbox for acceleration failed!\n");
+	}
+
+
 	initializeBus();
+	initializeUart();
 	setupSensor();
 	setupPeriodicRead();
-	setupClockTask();
+	setupReadSensorClockTask();
 	setupLedSaber();
+	setupUartTask();
 
     System_printf("Start BIOS\n");
     System_flush();

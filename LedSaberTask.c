@@ -94,26 +94,19 @@ void DisplayLedSaberTask()
 
 
 	while (1) {
-		if (Mailbox_pend(mailboxHandle, &acceleration, BIOS_WAIT_FOREVER)) {
+		if (Mailbox_pend(accelerationDataMailbox, &acceleration, BIOS_WAIT_FOREVER)) {
 
 			gVector = fabsf(sqrtf(acceleration.x * acceleration.x + acceleration.y * acceleration.y + acceleration.z * acceleration.z));
 			gValue = fabsf(gVector/9.81 - 1);
-			/*
-			System_printf("x: %f # y:%f # z:%f # gVector:%f + gValue:%f\n", acceleration.x,acceleration.y,acceleration.z, gVector, gValue);
-			System_flush();
-*/
 
 			if (gValue < 0.1) setLEDGroupStatus(ledPatterns[0]);
 			else if (gValue < 0.2) setLEDGroupStatus(ledPatterns[1]);
 			else if (gValue < 0.3) setLEDGroupStatus(ledPatterns[2]);
 			else if (gValue < 0.4) setLEDGroupStatus(ledPatterns[3]);
 			else setLEDGroupStatus(ledPatterns[4]);
-
-
 		}
 	}
 }
-
 
 /*
  *  setup task function

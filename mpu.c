@@ -143,15 +143,15 @@ void readMPU9150Task()
 {
 	if (i2c == NULL) System_abort("readMPU9150Task: i2c is not initialized");
 
+	const float gMultiplier = 9.81/MPU9150_ACCEL_CONFIG_2G_RANGE;
+
 	UInt eventPendingResult;
     I2C_Transaction i2cTransaction;
     uint8_t         writeBuffer[1];
     Tmpu9150data	sensorData;
     Tacceleration	acceleration;
-
-    int16_t x,y,z;
-
-    const float gMultiplier = 9.81/MPU9150_ACCEL_CONFIG_2G_RANGE;
+    int16_t 		x,y,z;
+    uint8_t			eventCounter = 0;
 
 	i2cTransaction.slaveAddress = SENSOR_ADDRESS;
 	i2cTransaction.writeBuf = writeBuffer;
@@ -163,17 +163,26 @@ void readMPU9150Task()
 	writeBuffer[0] = MPU9150_ACCEL_XOUT_H;
 
 	while (1) {
-		eventPendingResult = Event_pend(clockElapsedEventHandle, Event_Id_00, Event_Id_00, BIOS_WAIT_FOREVER);
+		eventPendingResult = Event_pend(readSensorElapsedEventHandle, Event_Id_00, Event_Id_00, BIOS_WAIT_FOREVER);
 		if (eventPendingResult != 0) {
 			if (I2C_transfer(i2c, &i2cTransaction)) {
+
+				if (eventCounter++ % 10 == 0) {
+					if (! Mailbox_post(rawDataMailbox, &sensorData, BIOS_NO_WAIT)) {
+						System_printf("raw data mailbox is full\n");
+						System_flush();
+					}
+				}
+
 				x = ((sensorData.rawValues[0] << 8) | sensorData.rawValues[1]);
 				y = ((sensorData.rawValues[2] << 8) | sensorData.rawValues[3]);
 				z = ((sensorData.rawValues[4] << 8) | sensorData.rawValues[5]);
 				acceleration.x = gMultiplier * x;
 				acceleration.y = gMultiplier * y;
 				acceleration.z = gMultiplier * z;
-				if (! Mailbox_post(mailboxHandle, &acceleration, BIOS_NO_WAIT)) {
-					System_printf("target mailbox is full\n");
+
+				if (! Mailbox_post(accelerationDataMailbox, &acceleration, BIOS_NO_WAIT)) {
+					System_printf("acceleration data mailbox is full\n");
 					System_flush();
 				}
 			}
