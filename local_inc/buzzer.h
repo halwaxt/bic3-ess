@@ -16,13 +16,7 @@ void pwmEmulate(uint32_t microsec_period, uint16_t length);
 void makeSound();
 void makeSoundTask();
 
-// Functions for development, not needed for buzzer
-void onClockElapsed(void);
-void startClockTask();
-void createClockEvent();
-void createMailbox();
-void write2Mailbox();
-void startPeriodicWriteTask();
+extern volatile Mailbox_Handle accelerationDataMailbox;
 
 #endif /* LOCAL_INC_BUZZER_H_ */
 

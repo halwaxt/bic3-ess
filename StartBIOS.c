@@ -43,8 +43,9 @@
 #include <mpu9150data.h>
 #include <LedSaberTask.h>
 #include <UARTTask.h>
+#include <buzzer.h>
 
-#define READ_SENSOR_INTERVAL 50
+#define READ_SENSOR_INTERVAL 125
 
 volatile I2C_Handle i2c;
 volatile Event_Handle readSensorElapsedEventHandle;
@@ -102,11 +103,16 @@ int main(void) {
 
 	initializeBus();
 	initializeUart();
+
+	initBuzzer();
+	startSoundTimer();
+	makeSoundTask();
+
 	setupSensor();
 	setupPeriodicRead();
 	setupReadSensorClockTask();
-	setupLedSaber();
-	setupUartTask();
+//	setupLedSaber();
+//	setupUartTask();
 
     System_printf("Start BIOS\n");
     System_flush();

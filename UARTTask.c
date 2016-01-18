@@ -49,13 +49,13 @@ void writeToUartTask(void) {
 		System_abort("uartHandle is NULL!");
 	}
 
-	Tmpu9150data acceleration;
+	Tmpu9150data sensorData;
 	char output[] = "SUPER!\n";
 
 
 
 	while (1) {
-		if (Mailbox_pend(rawDataMailbox, &Tmpu9150data, BIOS_WAIT_FOREVER)) {
+		if (Mailbox_pend(rawDataMailbox, &sensorData, BIOS_WAIT_FOREVER)) {
 			if (UART_write(uartHandle, &output, sizeof(output)) <= 0) {
 				System_printf("no data was written to UART\n");
 			}

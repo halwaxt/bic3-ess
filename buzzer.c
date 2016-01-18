@@ -29,40 +29,15 @@
 #include "mpu9150data.h"
 #include "buzzer.h"
 
-/*
- * Development Header
- */
-#include <ti/sysbios/knl/Event.h>
-
-
 
 #define GFACTOR 100
-#define GDELAY 10
+#define GDELAY 100
+#define GMULTIPLY 2
 
-volatile Mailbox_Handle mailboxHandle;
-volatile Event_Handle clockElapsedEventHandle;
+//volatile Mailbox_Handle mailboxHandle;
 
 Timer_Handle startSoundTimerHandle;
 Timer_Handle stopSoundTimerHandle;
-
-
-int main() {
-
-	initBuzzer();
-
-	createClockEvent(); // Dev Function
-	createMailbox(); // Dev Function
-	startClockTask(); // Dev Function
-
-	startSoundTimer();
-	startPeriodicWriteTask(); // Dev Function
-
-	makeSoundTask();
-
-	BIOS_start();
-	return(0);
-}
-
 
 void initBuzzer() {
 	//GPIO_init();
@@ -116,7 +91,7 @@ void pwmEmulate(uint32_t microsec_period, uint16_t length) {
 		Timer_start(startSoundTimerHandle);
 	}
 	Hwi_restore(key);
-	Task_sleep(length*2);
+	//Task_sleep(length*2);
 }
 
 void makeSound() {
@@ -125,10 +100,10 @@ void makeSound() {
 	Tacceleration acceleration;
 
 	while (1) {
-		if (Mailbox_pend(mailboxHandle, &acceleration, BIOS_WAIT_FOREVER)) {
+		if (Mailbox_pend(accelerationDataMailbox, &acceleration, BIOS_WAIT_FOREVER)) {
 
 			gVector = fabsf(sqrtf(acceleration.x * acceleration.x + acceleration.y * acceleration.y + acceleration.z * acceleration.z));
-			gValue = fabsf(gVector/9.81 - 1);
+			gValue = fabsf(gVector/9.81 - 1) * GMULTIPLY;
 
 			System_printf("gValue: %f\n", gValue);
 			System_flush();
@@ -136,8 +111,8 @@ void makeSound() {
 			if (gValue == 0) {
 				gValue = 0.1;
 			}
-			pwmEmulate((gValue*GFACTOR),GDELAY);
-			pwmEmulate(0,1);
+			pwmEmulate((gValue*GFACTOR),GDELAY );
+			//pwmEmulate(0,GDELAY);
 		}
 	}
 }
@@ -150,7 +125,7 @@ void makeSoundTask() {
 	Task_Params musicTaskParameter;
 
 	Task_Params_init(&musicTaskParameter);
-	musicTaskParameter.priority = 15;
+	musicTaskParameter.priority = 3;
 	musicTaskParameter.arg0 = NULL;
 	musicTaskParameter.arg1 = NULL;
 
@@ -158,84 +133,5 @@ void makeSoundTask() {
 	if (musicTask == NULL) {
  		System_abort("musicTask failed\n");
 	}
-}
-
-
-/*
- * ===============================================================================
- * Functions for development only
- */
-
-void onClockElapsed(void) {
-	Event_post(clockElapsedEventHandle, Event_Id_00);
-}
-
-void startClockTask() {
-	Clock_Params clockParameters;
-    Clock_Params_init(&clockParameters);
-    clockParameters.period = 50;
-    clockParameters.startFlag = TRUE;
-    Clock_create((Clock_FuncPtr)onClockElapsed, 50, &clockParameters, NULL);
-}
-
-void createClockEvent() {
-	Error_Block errorBlock;
-	Error_init(&errorBlock);
-
-	clockElapsedEventHandle = Event_create(NULL, &errorBlock);
-	if (clockElapsedEventHandle == NULL) {
-		System_abort("creating event handle failed!\n");
-	}
-}
-
-void createMailbox() {
-	Error_Block errorBlock;
-	Error_init(&errorBlock);
-
-	Mailbox_Params mailboxParams;
-	Mailbox_Params_init(&mailboxParams);
-
-	mailboxHandle = Mailbox_create(sizeof(Tacceleration), 1, &mailboxParams, &errorBlock);
-	if (mailboxHandle == NULL) {
-		System_abort("creating mailbox failed!\n");
-	}
-}
-
-void write2Mailbox() {
-	UInt eventPendingResult;
-	Tacceleration acceleration;
-
-	while (1) {
-		eventPendingResult = Event_pend(clockElapsedEventHandle, Event_Id_00, Event_Id_00, BIOS_WAIT_FOREVER);
-		if (eventPendingResult != 0) {
-
-			acceleration.x = ((float)rand()/(float)(RAND_MAX));
-			acceleration.y = ((float)rand()/(float)(RAND_MAX));
-			acceleration.z = ((float)rand()/(float)(RAND_MAX));
-
-			if (! Mailbox_post(mailboxHandle, &acceleration, BIOS_NO_WAIT)) {
-				System_printf("target mailbox is full\n");
-				System_flush();
-			}
-		}
-	}
-}
-
-void startPeriodicWriteTask() {
-	Task_Params periodicReadTaskParams;
-	Task_Handle periodicReadTaskHandle;
-	Error_Block eb;
-
-    Error_init(&eb);
-    Task_Params_init(&periodicReadTaskParams);
-    periodicReadTaskParams.stackSize = 1024;/*stack in bytes*/
-    periodicReadTaskParams.priority = 5;
-    periodicReadTaskHandle = Task_create((Task_FuncPtr)write2Mailbox, &periodicReadTaskParams, &eb);
-    if (periodicReadTaskHandle == NULL) {
-    	System_abort("Creating periodicReadTask failed");
-    }
-    else {
-    	System_printf("created task periodicReadTask\n");
-    }
 }
 
