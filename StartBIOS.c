@@ -104,14 +104,14 @@ int main(void) {
 	initializeBus();
 	initializeUart();
 
-	initBuzzer();
-	startSoundTimer();
-	makeSoundTask();
+	//initBuzzer();
+	//startSoundTimer();
+	//makeSoundTask();
 
 	setupSensor();
 	setupPeriodicRead();
 	setupReadSensorClockTask();
-//	setupLedSaber();
+	setupLedSaber();
 //	setupUartTask();
 
     System_printf("Start BIOS\n");
