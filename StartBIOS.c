@@ -46,7 +46,7 @@
 #include <UARTTask.h>
 #include <buzzer.h>
 
-#define READ_SENSOR_INTERVAL 50000
+#define READ_SENSOR_INTERVAL 50
 
 volatile I2C_Handle i2c;
 volatile Event_Handle readSensorElapsedEventHandle;
@@ -65,6 +65,7 @@ void onReadSensorClockElapsed(void) {
  */
 void setupReadSensorClockTask()
 {
+	/*
 	UInt key;
 	volatile Timer_Handle sensorTimerHandle;
  	Timer_Params sensorTimerParameter;
@@ -81,6 +82,13 @@ void setupReadSensorClockTask()
 	key = Hwi_disable();
 	Timer_start(sensorTimerHandle);
 	Hwi_restore(key);
+	*/
+
+	Clock_Params clockParameters;
+	Clock_Params_init(&clockParameters);
+	clockParameters.period = READ_SENSOR_INTERVAL;
+	clockParameters.startFlag = TRUE;
+	Clock_create((Clock_FuncPtr)onReadSensorClockElapsed, READ_SENSOR_INTERVAL, &clockParameters, NULL);
 }
 
 int main(void) {

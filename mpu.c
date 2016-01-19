@@ -159,7 +159,7 @@ void readMPU9150Task()
 	i2cTransaction.readBuf = sensorData.rawValues;
 	i2cTransaction.readCount = MPU9150_SUPPORTED_SENSOR_BYTES;
 
-	/* start at the accel register and do a burts read for all values */
+	/* start at the accel register and do a burst read for all values */
 	writeBuffer[0] = MPU9150_ACCEL_XOUT_H;
 
 	while (1) {
@@ -167,7 +167,7 @@ void readMPU9150Task()
 		if (eventPendingResult != 0) {
 			if (I2C_transfer(i2c, &i2cTransaction)) {
 
-				if (eventCounter++ % 10 == 0) {
+				if (++eventCounter > 20) {
 					if (! Mailbox_post(rawDataMailbox, &sensorData, BIOS_NO_WAIT)) {
 						System_printf("raw data mailbox is full\n");
 						System_flush();

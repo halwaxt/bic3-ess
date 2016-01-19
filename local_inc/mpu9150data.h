@@ -23,4 +23,14 @@ typedef struct acceleration {
 	float z;
 } Tacceleration;
 
+typedef struct gyro {
+	float x;
+	float y;
+	float z;
+} Tgyro;
+
+float getTemperatureInCelsius(const Tmpu9150data *sensorData);
+
+void getGyroValues(const Tmpu9150data *sensorData, Tgyro *gyroValues);
+
 #endif /* LOCAL_INC_MPU9150DATA_H_ */

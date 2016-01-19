@@ -9,6 +9,7 @@
 #include <inc/hw_memmap.h>
 
 #include <xdc/std.h>
+#include <stdio.h>
 #include <xdc/cfg/global.h>
 #include <xdc/runtime/System.h>
 #include <xdc/runtime/Error.h>
@@ -29,8 +30,8 @@ void initializeUart(void) {
 	UART_Params uartParams;
 
 	UART_Params_init(&uartParams);
-	uartParams.writeDataMode = UART_DATA_BINARY;
-	uartParams.readDataMode = UART_DATA_BINARY;
+	uartParams.writeDataMode = UART_DATA_TEXT;
+	uartParams.readDataMode = UART_DATA_TEXT;
 	uartParams.readReturnMode = UART_RETURN_FULL;
 	uartParams.readEcho = UART_ECHO_OFF;
 	uartParams.baudRate = 9600;
@@ -41,7 +42,7 @@ void initializeUart(void) {
 		System_abort("initialize UART failed!\n");
 	}
 	System_printf("initialized Uart done!\n");
-	UART_write(uartHandle,"HALLO", 6);
+
 }
 
 void writeToUartTask(void) {
@@ -50,18 +51,22 @@ void writeToUartTask(void) {
 	}
 
 	Tmpu9150data sensorData;
-	char output[] = "SUPER!\n";
-
-
+	Tgyro gyroData;
+	char uartBuffer[64];
+	int bufferSize;
 
 	while (1) {
 		if (Mailbox_pend(rawDataMailbox, &sensorData, BIOS_WAIT_FOREVER)) {
-			if (UART_write(uartHandle, &output, sizeof(output)) <= 0) {
-				System_printf("no data was written to UART\n");
-			}
+
+			float temp = getTemperatureInCelsius(&sensorData);
+			bufferSize = sprintf(uartBuffer, "current temp in °C: %f\n", temp);
+			UART_write(uartHandle, &uartBuffer, bufferSize);
+
+			getGyroValues(&sensorData, &gyroData);
+			bufferSize = sprintf(uartBuffer, "gyroscope gx:%f gy:%f gz:%f\n", gyroData.x, gyroData.y, gyroData.z);
+			UART_write(uartHandle, &uartBuffer, bufferSize);
 		}
 	}
-
 }
 
 void setupUartTask(void) {
