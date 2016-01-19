@@ -23,6 +23,7 @@
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/hal/Timer.h>
 #include <ti/sysbios/knl/Clock.h>
+#include <ti/sysbios/hal/Hwi.h>
 
 #include <ti/drivers/I2C.h>
 #include <ti/drivers/PWM.h>
@@ -45,7 +46,7 @@
 #include <UARTTask.h>
 #include <buzzer.h>
 
-#define READ_SENSOR_INTERVAL 125
+#define READ_SENSOR_INTERVAL 50000
 
 volatile I2C_Handle i2c;
 volatile Event_Handle readSensorElapsedEventHandle;
@@ -62,14 +63,24 @@ void onReadSensorClockElapsed(void) {
 /*
  *  setup clock task function
  */
-int setupReadSensorClockTask()
+void setupReadSensorClockTask()
 {
-	Clock_Params clockParameters;
-    Clock_Params_init(&clockParameters);
-    clockParameters.period = READ_SENSOR_INTERVAL;
-    clockParameters.startFlag = TRUE;
-    Clock_create((Clock_FuncPtr)onReadSensorClockElapsed, READ_SENSOR_INTERVAL, &clockParameters, NULL);
-    return (0);
+	UInt key;
+	volatile Timer_Handle sensorTimerHandle;
+ 	Timer_Params sensorTimerParameter;
+
+	Error_Block eb;
+	Error_init(&eb);
+
+ 	Timer_Params_init(&sensorTimerParameter);
+ 	sensorTimerParameter.period = READ_SENSOR_INTERVAL;
+	sensorTimerParameter.periodType=Timer_PeriodType_MICROSECS;
+	sensorTimerParameter.runMode=Timer_RunMode_CONTINUOUS;
+	sensorTimerParameter.startMode=Timer_StartMode_AUTO;
+	sensorTimerHandle = Timer_create(4, (ti_sysbios_interfaces_ITimer_FuncPtr)onReadSensorClockElapsed, &sensorTimerParameter, &eb);
+	key = Hwi_disable();
+	Timer_start(sensorTimerHandle);
+	Hwi_restore(key);
 }
 
 int main(void) {
@@ -112,7 +123,8 @@ int main(void) {
 	setupPeriodicRead();
 	setupReadSensorClockTask();
 	setupLedSaber();
-//	setupUartTask();
+
+	setupUartTask();
 
     System_printf("Start BIOS\n");
     System_flush();

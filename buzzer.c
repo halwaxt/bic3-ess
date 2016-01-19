@@ -30,14 +30,14 @@
 #include "buzzer.h"
 
 
-#define GFACTOR 100
-#define GDELAY 100
-#define GMULTIPLY 2
+#define GFACTOR 10000
+#define PERIOD_LENGTH 100
+#define GMULTIPLY 3
 
 //volatile Mailbox_Handle mailboxHandle;
 
-Timer_Handle startSoundTimerHandle;
-Timer_Handle stopSoundTimerHandle;
+volatile Timer_Handle startSoundTimerHandle;
+volatile Timer_Handle stopSoundTimerHandle;
 
 void initBuzzer() {
 	//GPIO_init();
@@ -48,10 +48,14 @@ void initBuzzer() {
 }
 
 
-void startTimer(void) {
+void soundTimer(void) {
+	UInt key;
+
 	GPIOPinWrite(GPIO_PORTM_BASE, GPIO_PIN_3, ~(GPIOPinRead(GPIO_PORTM_BASE, GPIO_PIN_3)));
 	Timer_setPeriod(stopSoundTimerHandle,(Timer_getPeriod(startSoundTimerHandle)));
+	key = Hwi_disable();
 	Timer_start(stopSoundTimerHandle);
+	Hwi_restore(key);
 
 }
 void stopTimer(void) {
@@ -59,6 +63,7 @@ void stopTimer(void) {
 }
 
 void startSoundTimer() {
+	UInt key;
  	Timer_Params startTimerParameter;
  	Timer_Params stopTimerParameter;
 
@@ -66,12 +71,14 @@ void startSoundTimer() {
 	Error_init(&eb);
 
  	Timer_Params_init(&startTimerParameter);
- 	startTimerParameter.period = 0;
+ 	startTimerParameter.period = 500;
 	startTimerParameter.periodType=Timer_PeriodType_MICROSECS;
 	startTimerParameter.runMode=Timer_RunMode_CONTINUOUS;
 	startTimerParameter.startMode=Timer_StartMode_AUTO;
-	startSoundTimerHandle = Timer_create(2, (ti_sysbios_interfaces_ITimer_FuncPtr) startTimer, &startTimerParameter, &eb);
+	startSoundTimerHandle = Timer_create(2, (ti_sysbios_interfaces_ITimer_FuncPtr) soundTimer, &startTimerParameter, &eb);
+	key = Hwi_disable();
 	Timer_start(startSoundTimerHandle);
+	Hwi_restore(key);
 
 	Timer_Params_init(&stopTimerParameter);
 	stopTimerParameter.period = 0;
@@ -106,12 +113,10 @@ void makeSound() {
 			gValue = fabsf(gVector/9.81 - 1) * GMULTIPLY;
 
 			System_printf("gValue: %f\n", gValue);
+			System_printf("gValue*GFACTOR: %f\n", gValue*GFACTOR);
 			System_flush();
 
-			if (gValue == 0) {
-				gValue = 0.1;
-			}
-			pwmEmulate((gValue*GFACTOR),GDELAY );
+			pwmEmulate((gValue*GFACTOR),PERIOD_LENGTH );
 			//pwmEmulate(0,GDELAY);
 		}
 	}
@@ -125,7 +130,7 @@ void makeSoundTask() {
 	Task_Params musicTaskParameter;
 
 	Task_Params_init(&musicTaskParameter);
-	musicTaskParameter.priority = 3;
+	musicTaskParameter.priority = 7;
 	musicTaskParameter.arg0 = NULL;
 	musicTaskParameter.arg1 = NULL;
 
@@ -134,4 +139,5 @@ void makeSoundTask() {
  		System_abort("musicTask failed\n");
 	}
 }
+
 

@@ -172,6 +172,7 @@ void readMPU9150Task()
 						System_printf("raw data mailbox is full\n");
 						System_flush();
 					}
+					eventCounter = 0;
 				}
 
 				x = ((sensorData.rawValues[0] << 8) | sensorData.rawValues[1]);
