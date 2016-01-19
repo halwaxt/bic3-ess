@@ -46,7 +46,7 @@
 #include <UARTTask.h>
 #include <buzzer.h>
 
-#define READ_SENSOR_INTERVAL 125
+#define READ_SENSOR_INTERVAL 50000
 
 volatile I2C_Handle i2c;
 volatile Event_Handle readSensorElapsedEventHandle;
@@ -122,8 +122,8 @@ int main(void) {
 	setupSensor();
 	setupPeriodicRead();
 	setupReadSensorClockTask();
-//	setupLedSaber();
-//	setupUartTask();
+	setupLedSaber();
+	setupUartTask();
 
     System_printf("Start BIOS\n");
     System_flush();

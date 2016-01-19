@@ -30,9 +30,9 @@
 #include "buzzer.h"
 
 
-#define GFACTOR 100
+#define GFACTOR 10000
 #define PERIOD_LENGTH 100
-#define GMULTIPLY 2
+#define GMULTIPLY 3
 
 //volatile Mailbox_Handle mailboxHandle;
 
@@ -71,7 +71,7 @@ void startSoundTimer() {
 	Error_init(&eb);
 
  	Timer_Params_init(&startTimerParameter);
- 	startTimerParameter.period = 0;
+ 	startTimerParameter.period = 500;
 	startTimerParameter.periodType=Timer_PeriodType_MICROSECS;
 	startTimerParameter.runMode=Timer_RunMode_CONTINUOUS;
 	startTimerParameter.startMode=Timer_StartMode_AUTO;
@@ -113,11 +113,9 @@ void makeSound() {
 			gValue = fabsf(gVector/9.81 - 1) * GMULTIPLY;
 
 			System_printf("gValue: %f\n", gValue);
+			System_printf("gValue*GFACTOR: %f\n", gValue*GFACTOR);
 			System_flush();
 
-			if (gValue == 0) {
-				gValue = 0.1;
-			}
 			pwmEmulate((gValue*GFACTOR),PERIOD_LENGTH );
 			//pwmEmulate(0,GDELAY);
 		}
@@ -132,7 +130,7 @@ void makeSoundTask() {
 	Task_Params musicTaskParameter;
 
 	Task_Params_init(&musicTaskParameter);
-	musicTaskParameter.priority = 3;
+	musicTaskParameter.priority = 7;
 	musicTaskParameter.arg0 = NULL;
 	musicTaskParameter.arg1 = NULL;
 
