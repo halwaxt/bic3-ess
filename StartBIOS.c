@@ -123,14 +123,17 @@ int main(void) {
 	initializeBus();
 	initializeUart();
 
-	//initBuzzer();
+	initBuzzer();
 	//startSoundTimer();
 	//makeSoundTask();
 
 	setupSensor();
 	setupPeriodicRead();
 	setupReadSensorClockTask();
-	setupLedSaber();
+	//setupLedSaber();
+
+	startSoundTimer();
+	makeSoundTask();
 
 	setupUartTask();
 

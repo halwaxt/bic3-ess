@@ -111,6 +111,9 @@ void makeSound() {
 
 			gVector = fabsf(sqrtf(acceleration.x * acceleration.x + acceleration.y * acceleration.y + acceleration.z * acceleration.z));
 			gValue = fabsf(gVector/9.81 - 1) * GMULTIPLY;
+			if (gValue < 0.001) {
+				gValue = 0.001;
+			}
 
 			System_printf("gValue: %f\n", gValue);
 			System_printf("gValue*GFACTOR: %f\n", gValue*GFACTOR);
